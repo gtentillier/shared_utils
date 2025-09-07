@@ -4,7 +4,7 @@
     {
       "label": "Stage, Commit and Push",
       "type": "shell",
-      "command": "git add -A && git commit -m 'Auto commit' && git push",
+      "command": "git add -A && git commit -m 'auto-commit' && git push",
       "problemMatcher": []
     }
   ]
