@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
-path_project = (Path(__file__).resolve().parents[2])
+path_project = (Path(__file__).resolve().parents[5])
 
 
 def path_data(filename: Optional[str] = None) -> Path:
