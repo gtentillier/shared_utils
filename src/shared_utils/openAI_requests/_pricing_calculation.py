@@ -296,14 +296,19 @@ class PricingCalculator:
         """
         try:
             model_name = response.model
+            mode = "LLM"
         except AttributeError:
+            mode = "STT"
             if model_name is None:
                 raise ValueError("Le nom du modèle doit être fourni si la réponse n'a pas d'attribut 'model' (pour le STT donc)")
 
         # Enlève le suffixe de date (ex: "gpt-4.1-nano-2025-04-14" → "gpt-4.1-nano")
         model_name = re.sub(r"-\d{4}-\d{2}-\d{2}$", "", model_name)
 
-        pricing = self._get_pricing(model_name, response.service_tier)
+        if mode == "LLM":
+            pricing = self._get_pricing(model_name, response.service_tier)
+        else:
+            pricing = self._get_pricing(model_name)
         # Déterminer le type de réponse (STT ou LLM)
         if hasattr(response.usage, 'seconds'):
             # STT: usage = {'seconds': X, 'type': 'duration'}
