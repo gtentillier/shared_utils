@@ -65,7 +65,7 @@ def test_basic_openai_llm_call_and_pricing():
     price = calculator.get_price(response)
 
     # Affiche le coût
-    price.print_price(decimal_places=8)
+    price.display(decimal_places=8)
 
 
 if __name__ == "__main__":

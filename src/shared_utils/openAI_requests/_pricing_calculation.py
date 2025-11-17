@@ -228,7 +228,7 @@ class ResponsePrice:
 
         return result
 
-    def print_price(self, decimal_places: int = 8) -> None:
+    def display(self, decimal_places: int = 8) -> None:
         """Affiche le prix de manière lisible pour un humain.
         
         Args:
@@ -254,7 +254,7 @@ class PricingCalculator:
     détaillé d'une réponse API.
     """
 
-    def get_pricing(self, model_name: str, service_tier: str = "default") -> ModelPricing:
+    def _get_pricing(self, model_name: str, service_tier: str = "default") -> ModelPricing:
         """Retourne le Pricing pour le modèle donné, ou lève KeyError si inconnu.
         
         Args:
@@ -274,24 +274,7 @@ class PricingCalculator:
             raise KeyError(f"Service tier '{service_tier}' non disponible pour le modèle {model_name}. Tiers disponibles: {list(model_pricings.keys())}")
         return model_pricings[service_tier]
 
-    def get_price_for_stt(self, model: str, duration_seconds: float, service_tier: str = "default") -> ResponsePrice:
-        """Calcule le coût pour une réponse STT en fonction de la durée.
-        
-        Args:
-            model: Nom du modèle STT (ex: "whisper-1").
-            duration_seconds: Durée de l'audio en secondes.
-            service_tier: Tier de service (défaut "default").
-        
-        Returns:
-            ResponsePrice avec le coût calculé.
-        
-        Raises:
-            KeyError: Si le modèle n'est pas dans la table de tarification.
-        """
-        pricing = self.get_pricing(model, service_tier)
-        return ResponsePrice.from_duration(model_pricing=pricing, duration_seconds=duration_seconds)
-
-    def get_price(self, response: Response) -> ResponsePrice:
+    def get_price(self, response: Response, model_name: str | None = None) -> ResponsePrice:
         """Calcule le coût détaillé d'une réponse API.
         
         Support pour :
@@ -307,12 +290,16 @@ class PricingCalculator:
         Raises:
             KeyError: Si le modèle ou le tier n'est pas dans la table de tarification.
         """
-        model_name = response.model
+        try:
+            model_name = response.model
+        except AttributeError:
+            if model_name is None:
+                raise ValueError("Le nom du modèle doit être fourni si la réponse n'a pas d'attribut 'model' (pour le STT donc)")
+
         # Enlève le suffixe de date (ex: "gpt-4.1-nano-2025-04-14" → "gpt-4.1-nano")
         model_name = re.sub(r"-\d{4}-\d{2}-\d{2}$", "", model_name)
 
-        pricing = self.get_pricing(model_name, response.service_tier)
-
+        pricing = self._get_pricing(model_name, response.service_tier)
         # Déterminer le type de réponse (STT ou LLM)
         if hasattr(response.usage, 'seconds'):
             # STT: usage = {'seconds': X, 'type': 'duration'}

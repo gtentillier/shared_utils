@@ -45,7 +45,7 @@ def test_basic_openai_speech_to_text_transcription():
     price = calculator.get_price_for_stt(model="whisper-1", duration_seconds=result.get("duration", 0))
 
     print(f"\n✓ Coût de la transcription :")
-    price.print_price(decimal_places=6)
+    price.display(decimal_places=6)
 
 
 if __name__ == "__main__":
