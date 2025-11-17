@@ -283,12 +283,16 @@ class PricingCalculator:
         
         Args:
             response: La réponse API OpenAI contenant usage, model et service_tier.
+            model_name: Le nom du modèle. Requis uniquement pour les réponses STT.
+                Pour les réponses LLM, le modèle est extrait de la réponse.
 
         Returns:
             ResponsePrice avec les coûts calculés.
 
         Raises:
             KeyError: Si le modèle ou le tier n'est pas dans la table de tarification.
+            ValueError: Si model_name n'est pas fourni pour une réponse STT.
+
         """
         try:
             model_name = response.model
