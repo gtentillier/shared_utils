@@ -274,7 +274,7 @@ class PricingCalculator:
             raise KeyError(f"Service tier '{service_tier}' non disponible pour le modèle {model_name}. Tiers disponibles: {list(model_pricings.keys())}")
         return model_pricings[service_tier]
 
-    def get_price(self, response: Response, model_name: str | None = None) -> ResponsePrice:
+    def get_price(self, response: Response | dict, model_name: str | None = None) -> ResponsePrice:
         """Calcule le coût détaillé d'une réponse API.
         
         Support pour :
@@ -310,9 +310,9 @@ class PricingCalculator:
         else:
             pricing = self._get_pricing(model_name)
         # Déterminer le type de réponse (STT ou LLM)
-        if hasattr(response.usage, 'seconds'):
+        if mode == "STT":
             # STT: usage = {'seconds': X, 'type': 'duration'}
-            duration_seconds = response.usage.seconds
+            duration_seconds = response["usage"]["seconds"]
             return ResponsePrice.from_duration(model_pricing=pricing, duration_seconds=duration_seconds)
         else:
             # LLM: usage avec tokens
