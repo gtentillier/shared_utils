@@ -214,7 +214,7 @@ class OpenAISTTCaller:
 
         # Reload model if a different one is requested
         if model is not None and model != self._loaded_model_name:
-            device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             self.model = whisper.load_model(model, device=device)
             self._loaded_model_name = model
 
