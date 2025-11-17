@@ -88,7 +88,7 @@ class OpenAISTTCaller:
             language: Language code (e.g., "fr", "en"). If None, auto-detect.
             response_format: Response format for OpenAI API. Options: "json", "text", "verbose_json", "srt", "vtt".
                            Defaults to "verbose_json".
-            timestamp_granularities: only for "whisper-1", if response_format is set to "verbose_json" : ["word"], ["segment"] or ["word", "segment"].
+            timestamp_granularities: only for "whisper-1", if response_format is set to "verbose_json" : ["word"], ["segment"] or ["word", "segment"]. Defaults to ["segment"].
             task: Transcription task - "transcribe" or "translate". Only used for local Whisper mode.
                   Defaults to "transcribe".
 
