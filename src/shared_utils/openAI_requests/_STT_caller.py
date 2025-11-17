@@ -204,9 +204,6 @@ class OpenAISTTCaller:
         """
         valid_models = ["large", "turbo"]
 
-        # Determine which model to use
-        model_to_use = model if model is not None else self._loaded_model_name
-
         # Validate and load model if needed
         if model is not None and model not in valid_models:
             raise ValueError(f"Model '{model}' not supported for local Whisper. "
