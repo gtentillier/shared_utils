@@ -82,13 +82,13 @@ class ResponsePrice:
       currency: Devise utilisée pour les prix (par défaut "dollar").
       currency_symbol: Symbole de la devise (par défaut "$").
     """
-    input: float
-    input_cached: float
-    output: float
-    total: float
+    input: float = 0.0
+    input_cached: float = 0.0
+    output: float = 0.0
+    total: float = 0.0
     currency: str = "dollar"
     currency_symbol: str = "$"
-    quantity: int = 1
+    quantity: int = 1  # Nombre d'appels ou d'unités facturées
 
     @classmethod
     def from_tokens(cls, model_pricing: ModelPricing, input_tokens: int, input_cached_tokens: int = 0, output_tokens: int = 0) -> "ResponsePrice":
@@ -274,7 +274,7 @@ class PricingCalculator:
             raise KeyError(f"Service tier '{service_tier}' non disponible pour le modèle {model_name}. Tiers disponibles: {list(model_pricings.keys())}")
         return model_pricings[service_tier]
 
-    def get_price(self, response: Response | dict, model_name: str | None = None) -> ResponsePrice:
+    def get_price(self, response: Response | dict, stt_model_name: str | None = None) -> ResponsePrice:
         """Calcule le coût détaillé d'une réponse API.
         
         Support pour :
@@ -283,43 +283,40 @@ class PricingCalculator:
         
         Args:
             response: La réponse API OpenAI contenant usage, model et service_tier.
-            model_name: Le nom du modèle. Requis uniquement pour les réponses STT.
-                Pour les réponses LLM, le modèle est extrait de la réponse.
+            stt_model_name: Le nom du modèle. Requis uniquement pour les réponses STT.
+                Pour les réponses LLM, le modèle est extrait de la réponse directement.
 
         Returns:
             ResponsePrice avec les coûts calculés.
 
         Raises:
             KeyError: Si le modèle ou le tier n'est pas dans la table de tarification.
-            ValueError: Si model_name n'est pas fourni pour une réponse STT.
+            ValueError: Si stt_model_name n'est pas fourni pour une réponse STT.
 
         """
         try:
-            model_name = response.model
+            stt_model_name = response.model
             mode = "LLM"
         except AttributeError:
             mode = "STT"
-            if model_name is None:
+            if stt_model_name is None:
                 raise ValueError("Le nom du modèle doit être fourni si la réponse n'a pas d'attribut 'model' (pour le STT donc)")
 
         # Enlève le suffixe de date (ex: "gpt-4.1-nano-2025-04-14" → "gpt-4.1-nano")
-        model_name = re.sub(r"-\d{4}-\d{2}-\d{2}$", "", model_name)
+        stt_model_name = re.sub(r"-\d{4}-\d{2}-\d{2}$", "", stt_model_name)
 
         if mode == "LLM":
-            pricing = self._get_pricing(model_name, response.service_tier)
-        else:
-            pricing = self._get_pricing(model_name)
-        # Déterminer le type de réponse (STT ou LLM)
-        if mode == "STT":
-            # STT: usage = {'seconds': X, 'type': 'duration'}
-            duration_seconds = response["usage"]["seconds"]
-            return ResponsePrice.from_duration(model_pricing=pricing, duration_seconds=duration_seconds)
-        else:
             # LLM: usage avec tokens
+            pricing = self._get_pricing(stt_model_name, response.service_tier)
             input_tokens = response.usage.input_tokens
             output_tokens = response.usage.output_tokens
             cached_tokens = response.usage.input_tokens_details.cached_tokens
             return ResponsePrice.from_tokens(model_pricing=pricing, input_tokens=input_tokens - cached_tokens, input_cached_tokens=cached_tokens, output_tokens=output_tokens)
+        else:
+            pricing = self._get_pricing(stt_model_name)
+            # STT: usage = {'seconds': X, 'type': 'duration'}
+            duration_seconds = response["usage"]["seconds"]
+            return ResponsePrice.from_duration(model_pricing=pricing, duration_seconds=duration_seconds)
 
 
 def print_all_pricings():

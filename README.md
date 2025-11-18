@@ -181,7 +181,7 @@ response = caller.response(model="gpt-4.1-nano", input="2 + 2 = ?", max_output_t
 
 # Calculer le coût
 calculator = PricingCalculator()
-price = calculator.get_price(response, service_tier="standard")
+price = calculator.get_price(response)
 
 price.display()  # Affiche: "$... (input, X%) + $... (output, Y%) = $... total"
 ```
@@ -316,7 +316,7 @@ result = stt.transcribe(audio_path="audio.mp3", model="whisper-1")
 # Calculer le coût basé sur la durée
 calculator = PricingCalculator()
 duration = result["usage"]["seconds"]
-price = calculator.get_price_for_stt("whisper-1", duration)
+price = calculator.get_price(result, stt_model_name="whisper-1")
 
 price.display()  # Affiche le coût de transcription
 # Exemple: "$0.00025 total (x1 appels, $0.00025 par appel)"
@@ -378,19 +378,19 @@ for segment in result["segments"]:
 **Traiter plusieurs audios et calculer le coût total :**
 
 ```python
-from shared_utils import OpenAISTTCaller, PricingCalculator
+from shared_utils import OpenAISTTCaller, PricingCalculator, ResponsePrice
 from pathlib import Path
 
 stt = OpenAISTTCaller(use_api=True, api_key="votre-clé-api")
 calculator = PricingCalculator()
 
 audio_files = list(Path("audios/").glob("*.mp3"))
-total_cost = calculator.get_price_for_stt("whisper-1", 0)  # Initialiser à 0
+total_cost = ResponsePrice(quantity=0) # Initialiser à 0
 
 for audio_file in audio_files:
     result = stt.transcribe(audio_file, model="whisper-1")
     duration = result["usage"]["seconds"]
-    cost = calculator.get_price_for_stt("whisper-1", duration)
+    cost = calculator.get_price(result, stt_model_name="whisper-1")
     total_cost += cost
 
 total_cost.display()  # Affiche le coût total avec la moyenne par appel
