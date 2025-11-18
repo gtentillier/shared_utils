@@ -138,16 +138,16 @@ pip install openai
 #### Imports
 
 ```python
-from shared_utils import OpenAICaller, PricingCalculator, ModelPricing, ResponsePrice
+from shared_utils import OpenAILLMCaller, PricingCalculator, ModelPricing, ResponsePrice
 ```
 
 #### 3.1 Appeler l'API OpenAI
 
 ```python
-from shared_utils import OpenAICaller
+from shared_utils import OpenAILLMCaller
 
 # Créer un caller
-caller = OpenAICaller(api_key="votre-clé-api")
+caller = OpenAILLMCaller(api_key="votre-clé-api")
 
 # Effectuer un appel simple
 response = caller.response(model="gpt-4.1-nano", input="Dis-moi un blague", max_output_tokens=100)
@@ -173,10 +173,10 @@ caller.response(
 #### 3.2 Calculer les coûts
 
 ```python
-from shared_utils import OpenAICaller, PricingCalculator
+from shared_utils import OpenAILLMCaller, PricingCalculator
 
 # Effectuer un appel
-caller = OpenAICaller(api_key="votre-clé-api")
+caller = OpenAILLMCaller(api_key="votre-clé-api")
 response = caller.response(model="gpt-4.1-nano", input="2 + 2 = ?", max_output_tokens=16)
 
 # Calculer le coût
