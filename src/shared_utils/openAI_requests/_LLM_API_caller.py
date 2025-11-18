@@ -20,13 +20,14 @@ class OpenAILLMCaller:
         parallel_tool_calls: bool | None = None,
         prompt: dict | None = None,
         prompt_cache_key: str | None = None,
+        reasoning: dict | None = None,
         safety_identifier: str | None = None,
         service_tier: str | None = "default",
         store: bool = False,
         stream: bool = False,
         stream_options: dict | None = None,
         temperature: float = 0.0,
-        text: dict = {"format": {"type": "text"}, "verbosity": "low"},
+        text: dict = {"format": {"type": "text"}, "verbosity": "medium"},
         tool_choice: dict | str | None = None,
         tools: list | None = None,
         top_logprobs: int | None = None,
@@ -47,6 +48,7 @@ class OpenAILLMCaller:
             parallel_tool_calls: Whether to allow parallel tool calls. Defaults to True.
             prompt: Dict with 'id', 'variables', 'version' keys for using a prompt template stored in OpenAI API Dashboard.
             prompt_cache_key: Key for caching prompt input larger than 1024 tokens. The 256 first tokens and the prompt_cache_key are hashed to identify the prompt.
+            reasoning: Configuration options for reasoning models (gpt-5 and o-series models only). format : {'effort': 'none'|'low'|'medium'|'high'}
             safety_identifier: Key for identifying user.
             service_tier: One of 'flex', 'priority', 'auto'.
             store: Whether to store for later retrievals by API.
@@ -104,7 +106,7 @@ class OpenAILLMCaller:
         if include is None:
             include = []
 
-        if model not in ["gpt-4.1-nano", "gpt-4.1-mini", "gpt-5-mini", "gpt-5-nano"]:
+        if model not in ["gpt-4.1-nano", "gpt-4.1-mini", "gpt-4.1", "gpt-5-mini", "gpt-5-nano", "gpt-5", "gpt-5.1"]:
             raise ValueError(f"Model {model} not supported for LLM mode.")
 
         request_params = {key: value
@@ -116,6 +118,7 @@ class OpenAILLMCaller:
                               "max_output_tokens": max_output_tokens,
                               "max_tool_calls": max_tool_calls,
                               "metadata": metadata,
+                              "reasoning": reasoning,
                               "parallel_tool_calls": parallel_tool_calls,
                               "prompt": prompt,
                               "prompt_cache_key": prompt_cache_key,
@@ -129,7 +132,7 @@ class OpenAILLMCaller:
                               "tool_choice": tool_choice,
                               "tools": tools,
                               "top_logprobs": top_logprobs,
-                          }.items() if (value is not None) and (key != 'temperature' or model.startswith('gpt-5'))}
+                          }.items() if (value is not None) and (key != 'temperature' or not model.startswith('gpt-5'))}
 
         response = self.client.responses.create(**request_params)
         return response

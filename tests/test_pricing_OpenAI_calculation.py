@@ -7,7 +7,7 @@ from shared_utils.openAI_requests._LLM_API_caller import OpenAILLMCaller
 from shared_utils.openAI_requests._pricing_calculation import PricingCalculator
 
 
-def test_basic_openai_llm_call_and_pricing():
+def test_basic_openai_llm_call_and_pricing(model: str = "gpt-4.1-nano"):
     """Test basique: appel OpenAI, calcul de pricing et affichage du coût."""
 
     # Initialise l'appelant OpenAI
@@ -16,12 +16,13 @@ def test_basic_openai_llm_call_and_pricing():
         print("❌ OPENAI_API_KEY not set")
         return
 
-    caller = OpenAILLMCaller(api_key=api_key, model="gpt-4.1-nano")
+    caller = OpenAILLMCaller(api_key=api_key)
 
     # Effectue un appel API simple
-    print("📞 Appel OpenAI avec gpt-4.1-nano...")
+    print(f"📞 Appel OpenAI avec {model}...")
     response = caller.response(
-        input="Dis-moi un nombre aléatoire entre 1 et 100",
+        model=model,
+        input="Dis-moi un nombre aléatoire entre 1 et 100 sans phrase, uniquement un nombre",
         text={
             "format": {
                 "type": "json_schema",
@@ -51,8 +52,13 @@ def test_basic_openai_llm_call_and_pricing():
             "verbosity": "medium",
         },
         max_output_tokens=100,
+        # reasoning={'effort': 'high'},
     )
-    print("Input:", "Dis-moi un nombre aléatoire entre 1 et 100", '\nOutput:', json.loads(response.output_text).get("result"), '\n')
+    try:
+        print("Input:", "Dis-moi un nombre aléatoire entre 1 et 100 sans phrase, uniquement un nombre", '\nOutput:', json.loads(response.output_text).get("result"), '\n')
+    except AttributeError:
+        pass
+    print(f"Output complet: {response.output_text}\n")
 
     print(f"✓ Réponse reçue du modèle: {response.model}")
     print(f"✓ Tokens utilisés:")
@@ -69,4 +75,4 @@ def test_basic_openai_llm_call_and_pricing():
 
 
 if __name__ == "__main__":
-    test_basic_openai_llm_call_and_pricing()
+    test_basic_openai_llm_call_and_pricing(model="gpt-4.1-nano")
