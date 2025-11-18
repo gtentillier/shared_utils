@@ -183,7 +183,7 @@ response = caller.response(model="gpt-4.1-nano", input="2 + 2 = ?", max_output_t
 calculator = PricingCalculator()
 price = calculator.get_price(response, service_tier="standard")
 
-price.print_price()  # Affiche: "$... (input, X%) + $... (output, Y%) = $... total"
+price.display()  # Affiche: "$... (input, X%) + $... (output, Y%) = $... total"
 ```
 
 **Service tiers disponibles :**
@@ -200,7 +200,7 @@ print(f"Coût par million de tokens: {pricing.input:.3f}")
 
 # Additionner plusieurs réponses
 total = price1 + price2
-total.print_price()  # Affiche le détail avec nombre de requêtes
+total.display()  # Affiche le détail avec nombre de requêtes
 ```
 
 ### 3.3 Speech-to-Text (STT) avec Whisper
@@ -318,7 +318,7 @@ calculator = PricingCalculator()
 duration = result["usage"]["seconds"]
 price = calculator.get_price_for_stt("whisper-1", duration)
 
-price.print_price()  # Affiche le coût de transcription
+price.display()  # Affiche le coût de transcription
 # Exemple: "$0.00025 total (x1 appels, $0.00025 par appel)"
 ```
 
@@ -393,7 +393,7 @@ for audio_file in audio_files:
     cost = calculator.get_price_for_stt("whisper-1", duration)
     total_cost += cost
 
-total_cost.print_price()  # Affiche le coût total avec la moyenne par appel
+total_cost.display()  # Affiche le coût total avec la moyenne par appel
 ```
 
 ## Contribution
