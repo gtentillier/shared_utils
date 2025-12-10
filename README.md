@@ -315,7 +315,6 @@ result = stt.transcribe(audio_path="audio.mp3", model="whisper-1")
 
 # Calculer le coût basé sur la durée
 calculator = PricingCalculator()
-duration = result["usage"]["seconds"]
 price = calculator.get_price(result, stt_model_name="whisper-1")
 
 price.display()  # Affiche le coût de transcription
