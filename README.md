@@ -203,6 +203,36 @@ total = price1 + price2
 total.display()  # Affiche le détail avec nombre de requêtes
 ```
 
+**Structure de ResponsePrice :**
+
+La classe `ResponsePrice` contient les informations détaillées suivantes :
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `input_price` | float | Coût des tokens d'entrée non-cachés |
+| `input_cached_price` | float | Coût des tokens d'entrée cachés |
+| `output_price` | float | Coût des tokens de sortie |
+| `total_price` | float | Coût total (input_price + input_cached_price + output_price) |
+| `input_tokens` | int | Nombre de tokens d'entrée non-cachés |
+| `input_cached_tokens` | int | Nombre de tokens d'entrée cachés |
+| `output_tokens` | int | Nombre de tokens de sortie |
+| `input_pricing` | float | Tarif unitaire appliqué pour les tokens d'entrée ($/M) |
+| `input_cached_pricing` | float | Tarif unitaire appliqué pour les tokens cachés ($/M) |
+| `output_pricing` | float | Tarif unitaire appliqué pour les tokens de sortie ($/M) |
+| `quantity` | int | Nombre d'appels API ou d'unités facturées |
+
+**Exemple d'accès aux champs :**
+
+```python
+calculator = PricingCalculator()
+price = calculator.get_price(response)
+
+print(f"Tokens d'entrée: {price.input_tokens}")
+print(f"Tokens d'entrée cachés: {price.input_cached_tokens}")
+print(f"Tokens de sortie: {price.output_tokens}")
+print(f"Coût total: {price.total_price:.10g}")
+print(f"Tarif d'entrée utilisé: {price.input_pricing:.6f} $/M")
+
 ### 3.3 Speech-to-Text (STT) avec Whisper
 
 Transcrire des fichiers audio en utilisant soit le modèle Whisper local, soit l'API OpenAI.
