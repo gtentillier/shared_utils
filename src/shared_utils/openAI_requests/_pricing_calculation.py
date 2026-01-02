@@ -75,17 +75,21 @@ class ResponsePrice:
     """Coût détaillé d'une réponse API.
 
     Champs:
-      input: Coût des tokens d'entrée non-cachés.
-      input_cached: Coût des tokens d'entrée cachés.
-      output: Coût des tokens de sortie.
-      total: Coût total (input + input_cached + output).
+      input_price: Coût des tokens d'entrée non-cachés.
+      input_cached_price: Coût des tokens d'entrée cachés.
+      output_price: Coût des tokens de sortie.
+      total_price: Coût total (input_price + input_cached_price + output_price).
+      input_tokens: Nombre de tokens d'entrée non-cachés (ou secondes pour STT).
+      output_tokens: Nombre de tokens de sortie.
       currency: Devise utilisée pour les prix (par défaut "dollar").
       currency_symbol: Symbole de la devise (par défaut "$").
     """
-    input: float = 0.0
-    input_cached: float = 0.0
-    output: float = 0.0
-    total: float = 0.0
+    input_price: float = 0.0
+    input_cached_price: float = 0.0
+    output_price: float = 0.0
+    total_price: float = 0.0
+    input_tokens: int = 0  # Nombre de tokens d'entrée ou secondes pour STT
+    output_tokens: int = 0  # Nombre de tokens de sortie
     currency: str = "dollar"
     currency_symbol: str = "$"
     quantity: int = 1  # Nombre d'appels ou d'unités facturées
@@ -114,7 +118,7 @@ class ResponsePrice:
 
         total_cost = input_cost + input_cached_cost + output_cost
 
-        return cls(input=input_cost, input_cached=input_cached_cost, output=output_cost, total=total_cost, currency=model_pricing.currency, currency_symbol=model_pricing.currency_symbol)
+        return cls(input_price=input_cost, input_cached_price=input_cached_cost, output_price=output_cost, total_price=total_cost, input_tokens=input_tokens, output_tokens=output_tokens, currency=model_pricing.currency, currency_symbol=model_pricing.currency_symbol)
 
     @classmethod
     def from_duration(cls, model_pricing: ModelPricing, duration_seconds: float) -> "ResponsePrice":
@@ -128,7 +132,7 @@ class ResponsePrice:
             ResponsePrice avec le coût calculé.
         """
         cost = duration_seconds * model_pricing.input
-        return cls(input=cost, input_cached=0.0, output=0.0, total=cost, currency=model_pricing.currency, currency_symbol=model_pricing.currency_symbol)
+        return cls(input_price=cost, input_cached_price=0.0, output_price=0.0, total_price=cost, input_tokens=int(duration_seconds), output_tokens=0, currency=model_pricing.currency, currency_symbol=model_pricing.currency_symbol)
 
     def __add__(self, other: "ResponsePrice") -> "ResponsePrice":
         """Additionne deux ResponsePrice et retourne un nouveau ResponsePrice.
@@ -145,13 +149,15 @@ class ResponsePrice:
         if self.currency != other.currency:
             raise ValueError(f"Impossible d'additionner des prix avec des devises différentes: {self.currency} vs {other.currency}")
 
-        new_input = self.input + other.input
-        new_input_cached = self.input_cached + other.input_cached
-        new_output = self.output + other.output
-        new_total = self.total + other.total
+        new_input_price = self.input_price + other.input_price
+        new_input_cached_price = self.input_cached_price + other.input_cached_price
+        new_output_price = self.output_price + other.output_price
+        new_total_price = self.total_price + other.total_price
+        new_input_tokens = self.input_tokens + other.input_tokens
+        new_output_tokens = self.output_tokens + other.output_tokens
         new_quantity = self.quantity + other.quantity
 
-        return ResponsePrice(input=new_input, input_cached=new_input_cached, output=new_output, total=new_total, currency=self.currency, currency_symbol=self.currency_symbol, quantity=new_quantity)
+        return ResponsePrice(input_price=new_input_price, input_cached_price=new_input_cached_price, output_price=new_output_price, total_price=new_total_price, input_tokens=new_input_tokens, output_tokens=new_output_tokens, currency=self.currency, currency_symbol=self.currency_symbol, quantity=new_quantity)
 
     def __iadd__(self, other: "ResponsePrice") -> "ResponsePrice":
         """Additionne en place un autre ResponsePrice.
@@ -168,10 +174,12 @@ class ResponsePrice:
         if self.currency != other.currency:
             raise ValueError(f"Impossible d'additionner des prix avec des devises différentes: {self.currency} vs {other.currency}")
 
-        self.input += other.input
-        self.input_cached += other.input_cached
-        self.output += other.output
-        self.total += other.total
+        self.input_price += other.input_price
+        self.input_cached_price += other.input_cached_price
+        self.output_price += other.output_price
+        self.total_price += other.total_price
+        self.input_tokens += other.input_tokens
+        self.output_tokens += other.output_tokens
         self.quantity += other.quantity
 
         return self
@@ -206,24 +214,24 @@ class ResponsePrice:
 
         parts = []
 
-        if self.input > 0:
-            percentage = get_percentage(self.input, self.total)
-            parts.append(f"{self.currency_symbol}{format_price(self.input)} (input, {percentage})")
+        if self.input_price > 0:
+            percentage = get_percentage(self.input_price, self.total_price)
+            parts.append(f"{self.currency_symbol}{format_price(self.input_price)} (input, {percentage})")
 
-        if self.input_cached > 0:
-            percentage = get_percentage(self.input_cached, self.total)
-            parts.append(f"{self.currency_symbol}{format_price(self.input_cached)} (cached, {percentage})")
+        if self.input_cached_price > 0:
+            percentage = get_percentage(self.input_cached_price, self.total_price)
+            parts.append(f"{self.currency_symbol}{format_price(self.input_cached_price)} (cached, {percentage})")
 
-        if self.output > 0:
-            percentage = get_percentage(self.output, self.total)
-            parts.append(f"{self.currency_symbol}{format_price(self.output)} (output, {percentage})")
+        if self.output_price > 0:
+            percentage = get_percentage(self.output_price, self.total_price)
+            parts.append(f"{self.currency_symbol}{format_price(self.output_price)} (output, {percentage})")
 
         breakdown = " + ".join(parts) if parts else f"{self.currency_symbol}0"
-        result = f"{breakdown} = {self.currency_symbol}{format_price(self.total)} total"
+        result = f"{breakdown} = {self.currency_symbol}{format_price(self.total_price)} total"
 
         # Ajouter la quantity et le coût moyen
         if self.quantity > 1:
-            avg_cost = self.total / self.quantity
+            avg_cost = self.total_price / self.quantity
             result += f" (x{self.quantity} appels, {self.currency_symbol}{format_price(avg_cost)} par appel)"
 
         return result
@@ -242,8 +250,8 @@ class ResponsePrice:
 
     def __repr__(self) -> str:
         """Représentation détaillée de la réponse de prix."""
-        return (f"ResponsePrice(input={self.input:.10g}, input_cached={self.input_cached:.10g}, "
-                f"output={self.output:.10g}, total={self.total:.10g}, quantity={self.quantity})")
+        return (f"ResponsePrice(input_price={self.input_price:.10g}, input_cached_price={self.input_cached_price:.10g}, "
+                f"output_price={self.output_price:.10g}, total_price={self.total_price:.10g}, input_tokens={self.input_tokens}, output_tokens={self.output_tokens}, quantity={self.quantity})")
 
 
 @dataclass
