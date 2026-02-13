@@ -3,8 +3,8 @@
 import os
 from pathlib import Path
 
-from shared_utils.openAI_requests._pricing_calculation import PricingCalculator
-from shared_utils.openAI_requests._STT_caller import OpenAISTTCaller
+from shared_utils.llm_requests import PricingCalculator
+from shared_utils.llm_requests import OpenAISTTCaller
 
 
 def test_basic_openai_speech_to_text_transcription():
@@ -42,7 +42,11 @@ def test_basic_openai_speech_to_text_transcription():
 
     # Calcule le prix
     calculator = PricingCalculator()
-    price = calculator.get_price_for_stt(model="whisper-1", duration_seconds=result.get("duration", 0))
+    # price = calculator.get_price_for_stt(model="whisper-1", duration_seconds=result.get("duration", 0))
+    # Adapted to new API: construct a dict compatible with get_price expecting 'usage'
+    duration = result.get("duration", 0)
+    mock_stt_response = {"usage": {"seconds": duration}}
+    price = calculator.get_price(mock_stt_response, stt_model_name="whisper-1")
 
     print(f"\n✓ Coût de la transcription :")
     price.display(decimal_places=6)

@@ -3,8 +3,8 @@
 import json
 import os
 
-from shared_utils.openAI_requests._LLM_API_caller import OpenAILLMCaller
-from shared_utils.openAI_requests._pricing_calculation import PricingCalculator
+from shared_utils.llm_requests import OpenAILLMCaller
+from shared_utils.llm_requests import PricingCalculator
 
 
 def test_basic_openai_llm_call_and_pricing(model: str = "gpt-4.1-nano"):

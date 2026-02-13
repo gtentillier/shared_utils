@@ -1,0 +1,11 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+  "files.exclude": {
+    ".venv": false,
+    "src/default_project_name.egg-info": true,
+    "LICENCE": true,
+    "setup.py": false
+  },
+  "python.analysis.extraPaths": ["${workspaceFolder}", "${workspaceFolder}/src"],
+}

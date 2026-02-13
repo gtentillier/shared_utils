@@ -5,16 +5,19 @@ Outils utilitaires de développement Python
 ## Description
 
 Ce dépôt contient les modules suivants :
+
 - paths : accéder rapidement au chemin du projet et au chemin d'accès aux données.
 
 ## Installation
 
 ### Option 1 : Installation directe avec pip
+
 ```bash
 pip install git+https://github.com/gtentillier/shared_utils.git@v0.1.0#egg=shared_utils
 ```
 
 ### Option 2 : Si vous utilisez un fichier requirements.txt
+
 1. Ajoutez la ligne suivante dans votre `requirements.txt` pour installer depuis le dépôt GitHub (remplacez `v0.1.0` par la version souhaitée) :
 
 ```text
@@ -26,7 +29,6 @@ git+https://github.com/gtentillier/shared_utils.git@v0.1.0#egg=shared_utils
 ```bash
 pip install -r requirements.txt
 ```
-
 
 ## Utilisation
 
@@ -99,7 +101,7 @@ from shared_utils import measure_time
 @dataclass
 class Calcul:
     valeur: int
-    
+
     @measure_time
     def calcul_couteux(self):
         total = sum(range(self.valeur))
@@ -119,29 +121,32 @@ La durée est formatée selon les règles suivantes :
 - **≥ 60 secondes** : `"2min 12s"` (minutes entières + secondes)
 
 Exemples :
+
 - 0.5s → `"0.500s"`
 - 5.234s → `"5.234s"`
 - 12s → `"12s"`
 - 65s → `"1min 5s"`
 - 125.5s → `"2min 5.500s"`
 
-### 3. Module openAI_requests
+### 3. Module llm_requests (OpenAI & Gemini)
 
-Effectuez des appels à l'API OpenAI et calculez automatiquement les coûts associés.
+Effectuez des appels aux APIs OpenAI et Gemini, et calculez automatiquement les coûts associés avec un calculateur unifié.
 
 #### Installation des dépendances
 
 ```bash
-pip install openai
+pip install openai google-genai
 ```
 
 #### Imports
 
 ```python
-from shared_utils import OpenAILLMCaller, PricingCalculator, ModelPricing, ResponsePrice
+from shared_utils import OpenAILLMCaller, GeminiLLMCaller, PricingCalculator, ModelPricing, ResponsePrice
 ```
 
-#### 3.1 Appeler l'API OpenAI
+#### 3.1 Appeler les APIs LLM
+
+**Appel OpenAI :**
 
 ```python
 from shared_utils import OpenAILLMCaller
@@ -154,12 +159,30 @@ response = caller.response(model="gpt-4.1-nano", input="Dis-moi un blague", max_
 print(response.output_text)
 ```
 
-**Paramètres principaux :**
+**Appel Gemini :**
+
+```python
+from shared_utils import GeminiLLMCaller
+
+# Créer un caller
+caller = GeminiLLMCaller(api_key="votre-clé-api")
+
+# Effectuer un appel simple
+response = caller.response(
+    model="gemini-3-flash-preview", 
+    input="Dis-moi un blague", 
+    instructions="Tu es un assistant drôle."
+)
+print(response.output_text)
+```
+
+**Paramètres principaux (OpenAI) :**
 
 ```python
 caller.response(
     model="gpt-4.1-nano",               # Modèle à utiliser
     input="Votre prompt",              # Prompt d'entrée (texte ou liste)
+    instructions="System instructions", # Instructions développeur
     max_output_tokens=256,              # Longueur max de la réponse
     temperature=0.7,                    # Créativité (0-2)
     service_tier="standard",            # "standard", "priority", ou "flex"
@@ -168,72 +191,78 @@ caller.response(
 )
 ```
 
-**Modèles disponibles :** `gpt-4.1-nano`, `gpt-4.1-mini`, `gpt-5-mini`, `gpt-5-nano`
+**Modèles OpenAI disponibles :** `gpt-4.1-nano`, `gpt-4.1-mini`, `gpt-4.1`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5`, `gpt-5.1`
 
-#### 3.2 Calculer les coûts
+**Modèles Gemini supportés (pricing) :** `gemini-3-flash-preview`, `gemini-3-pro-preview`
+
+#### 3.2 Calculer les coûts (Unifié)
+
+Le `PricingCalculator` est désormais unifié et détecte automatiquement le fournisseur à partir de la réponse.
 
 ```python
-from shared_utils import OpenAILLMCaller, PricingCalculator
+from shared_utils import PricingCalculator
 
-# Effectuer un appel
-caller = OpenAILLMCaller(api_key="votre-clé-api")
-response = caller.response(model="gpt-4.1-nano", input="2 + 2 = ?", max_output_tokens=16)
-
-# Calculer le coût
+# Initialiser le calculateur une seule fois
 calculator = PricingCalculator()
-price = calculator.get_price(response)
 
-price.display()  # Affiche: "$... (input, X%) + $... (output, Y%) = $... total"
+# Pour une réponse OpenAI
+price_openai = calculator.get_price(openai_response)
+price_openai.display()  # Affiche: "$... (input, X%) + $... (output, Y%) = $... total"
+
+# Pour une réponse Gemini
+price_gemini = calculator.get_price(gemini_response)
+price_gemini.display()
 ```
 
-**Service tiers disponibles :**
+**Service tiers disponibles (OpenAI) :**
+
 - `standard` : Tarif normal
-- `priority` : Tarif prioritaire (✅ gpt-4.1-*, gpt-5-mini, gpt-5.1, gpt-5)
+- `priority` : Tarif prioritaire (✅ gpt-4.1-\*, gpt-5-mini, gpt-5.1, gpt-5)
 - `flex` : Tarif réduit (✅ gpt-5-nano, gpt-5-mini, gpt-5.1, gpt-5)
-
-**Exemples supplémentaires :**
-
-```python
-# Récupérer le tarif d'un modèle
-pricing = calculator.get_pricing("gpt-4.1-nano", service_tier="priority")
-print(f"Coût par million de tokens: {pricing.input:.3f}")
-
-# Additionner plusieurs réponses
-total = price1 + price2
-total.display()  # Affiche le détail avec nombre de requêtes
-```
-
-**Structure de ResponsePrice :**
-
-La classe `ResponsePrice` contient les informations détaillées suivantes :
-
-| Champ | Type | Description |
-|-------|------|-------------|
-| `input_price` | float | Coût des tokens d'entrée non-cachés |
-| `input_cached_price` | float | Coût des tokens d'entrée cachés |
-| `output_price` | float | Coût des tokens de sortie |
-| `total_price` | float | Coût total (input_price + input_cached_price + output_price) |
-| `input_tokens` | int | Nombre de tokens d'entrée non-cachés |
-| `input_cached_tokens` | int | Nombre de tokens d'entrée cachés |
-| `output_tokens` | int | Nombre de tokens de sortie |
-| `input_pricing` | float | Tarif unitaire appliqué pour les tokens d'entrée ($/M) |
-| `input_cached_pricing` | float | Tarif unitaire appliqué pour les tokens cachés ($/M) |
-| `output_pricing` | float | Tarif unitaire appliqué pour les tokens de sortie ($/M) |
-| `quantity` | int | Nombre d'appels API ou d'unités facturées |
 
 **Exemple d'accès aux champs :**
 
 ```python
-calculator = PricingCalculator()
-price = calculator.get_price(response)
+price = calculator.get_price(openai_response)
 
 print(f"Tokens d'entrée: {price.input_tokens}")
 print(f"Tokens d'entrée cachés: {price.input_cached_tokens}")
 print(f"Tokens de sortie: {price.output_tokens}")
 print(f"Coût total: {price.total_price:.10g}")
 print(f"Tarif d'entrée utilisé: {price.input_pricing:.6f} $/M")
+```
 
-### 3.3 Speech-to-Text (STT) avec Whisper
+**Exemples supplémentaires :**
+
+```python
+# Additionner plusieurs réponses (même si provenant de fournisseurs différents)
+total = price_openai + price_gemini
+total.display()  # Affiche le détail cumulé avec nombre de requêtes (x2 appels)
+
+# Récupérer directement les tarifs d'un modèle OpenAI via le sous-calculateur
+openai_pricing = calculator.openai_calculator._get_pricing("gpt-4.1-nano", service_tier="priority")
+print(f"Coût par million de tokens: {openai_pricing.input:.3f}")
+```
+
+**Structure de ResponsePrice :**
+
+La classe `ResponsePrice` contient les informations détaillées suivantes :
+
+| Champ                  | Type  | Description                                                  |
+| ---------------------- | ----- | ------------------------------------------------------------ |
+| `input_price`          | float | Coût des tokens d'entrée non-cachés                          |
+| `input_cached_price`   | float | Coût des tokens d'entrée cachés                              |
+| `output_price`         | float | Coût des tokens de sortie                                    |
+| `total_price`          | float | Coût total (input_price + input_cached_price + output_price) |
+| `input_tokens`         | int   | Nombre de tokens d'entrée non-cachés                         |
+| `input_cached_tokens`  | int   | Nombre de tokens d'entrée cachés                             |
+| `output_tokens`        | int   | Nombre de tokens de sortie                                   |
+| `input_pricing`        | float | Tarif unitaire appliqué pour les tokens d'entrée ($/M)       |
+| `input_cached_pricing` | float | Tarif unitaire appliqué pour les tokens cachés ($/M)         |
+| `output_pricing`       | float | Tarif unitaire appliqué pour les tokens de sortie ($/M)      |
+| `quantity`             | int   | Nombre d'appels API ou d'unités facturées                    |
+
+#### 3.3 Speech-to-Text (STT) avec Whisper
 
 Transcrire des fichiers audio en utilisant soit le modèle Whisper local, soit l'API OpenAI.
 
@@ -242,7 +271,7 @@ Transcrire des fichiers audio en utilisant soit le modèle Whisper local, soit l
 Pour utiliser le mode local :
 ```bash
 pip install torch whisper
-```
+````
 
 #### Imports
 
@@ -297,7 +326,7 @@ stt.transcribe(
 **Paramètres détaillés :**
 
 - **audio_path** : Chemin vers le fichier audio
-- **model** : 
+- **model** :
   - Mode local : `"turbo"` (par défaut) ou `"large"`
   - Mode API : `"whisper-1"`, `"gpt-4o-mini-transcribe"`, ou `"gpt-4o-transcribe"`
 - **language** : Code langue ISO 639-1 (ex: `"fr"`, `"en"`, `"es"`). Si `None`, détection automatique
@@ -363,11 +392,11 @@ print(f"Transcription réalisée en {stt.last_duration:.2f}s")
 
 #### Modèles et performances
 
-| Modèle | Mode | Taille | Vitesse | Précision |
-|--------|------|--------|---------|-----------|
-| `turbo` | Local | ~758 MB | Très rapide | Très bonne |
-| `large` | Local | ~2.87 GB | Lent | Excellente |
-| `whisper-1` | API | - | Très rapide | Excellente |
+| Modèle      | Mode  | Taille   | Vitesse     | Précision  |
+| ----------- | ----- | -------- | ----------- | ---------- |
+| `turbo`     | Local | ~758 MB  | Très rapide | Très bonne |
+| `large`     | Local | ~2.87 GB | Lent        | Excellente |
+| `whisper-1` | API   | -        | Très rapide | Excellente |
 
 #### Exemples complets
 
