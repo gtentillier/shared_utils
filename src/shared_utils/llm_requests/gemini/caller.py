@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from google import genai
+from google.genai import types
 
 
 @dataclass
@@ -55,12 +56,25 @@ class GeminiLLMCaller:
             config_args["response_mime_type"] = "application/json"
             config_args["response_json_schema"] = schema
 
-        # Add thinking level if model is gemini-3 or similar reasoning model
-        # Note: This is a heuristic based on the provided code snippet
+        # Add thinking level if model is gemini-3
         if "gemini-3" in model:
-            # Add logic if specific config is needed for gemini-3
-            pass
+            # Map verbosity to thinking_level
+            verbosity = text.get("verbosity", "medium") if text else "medium"
 
-        response = self.client.models.generate_content(model=model, contents=input, config=config_args)
+            if "pro" in model:
+                # Pro only supports low and high
+                verbosity_map = {
+                    "low": "low",
+                    "medium": "high",  # medium is not supported on Pro, upgrade to high
+                    "high": "high"
+                }
+            else:
+                # Flash supports minimal, medium, low, high
+                verbosity_map = {"low": "minimal", "medium": "medium", "high": "high"}
+
+            thinking_level = kwargs.get("thinking_level", verbosity_map.get(verbosity, "medium"))
+            config_args["thinking_config"] = types.ThinkingConfig(thinking_level=thinking_level)
+
+        response = self.client.models.generate_content(model=model, contents=input, config=types.GenerateContentConfig(**config_args))
 
         return GeminiResponse(output_text=response.text, usage_metadata=response.usage_metadata, model=model)
