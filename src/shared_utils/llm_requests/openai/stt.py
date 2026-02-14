@@ -6,7 +6,8 @@ from typing import Any
 import torch
 import whisper
 from openai import OpenAI
-from openai.types.audio.transcription import Transcription
+
+# from openai.types.audio.transcription import Transcription
 
 warnings.filterwarnings("ignore", message=r".*FP16 is not supported on CPU; using FP32.*")
 
