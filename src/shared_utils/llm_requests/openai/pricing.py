@@ -25,6 +25,9 @@ PRICINGS: dict[str, dict[str, ModelPricing]] = {
         "priority": ModelPricing(input=0.45, input_cached=0.045, output=3.60),
         "flex": ModelPricing(input=0.125, input_cached=0.0125, output=1.00),
     },
+    "gpt-5.4-mini": {
+        "default": ModelPricing(input=0.750, input_cached=0.075, output=4.500),
+    },
     "gpt-5-nano": {
         "default": ModelPricing(input=0.050, input_cached=0.005, output=0.400),
         "flex": ModelPricing(input=0.025, input_cached=0.0025, output=0.20),

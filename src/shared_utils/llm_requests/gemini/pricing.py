@@ -6,10 +6,9 @@ from ...llm_requests.types import ModelPricing, ResponsePrice
 # Structure: {model: {service_tier: ModelPricing}}
 # service_tier est "default" pour Gemini sauf s'il y a des tiers spécifiques
 GEMINI_PRICINGS: dict[str, dict[str, ModelPricing]] = {
-    # Gemini 3 pro
-    "gemini-3-pro-preview": {"default": ModelPricing(input=2.00, output=12.00), },
-    # Gemini 3 flash
-    "gemini-3-flash-preview": {"default": ModelPricing(input=0.50, output=3.00), },
+    "gemini-3.1-pro-preview": {"default": ModelPricing(input=2.00, output=12.00), },  # Gemini 3 pro
+    "gemini-3-flash-preview": {"default": ModelPricing(input=0.50, output=3.00), },  # Gemini 3 flash
+    "gemini-3.5-flash": {"default": ModelPricing(input=1.50, output=9.00), },  # Gemini 3.5 flash
 }
 
 
