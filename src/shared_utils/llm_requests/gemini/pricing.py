@@ -28,18 +28,10 @@ class GeminiPricingCalculator:
         Returns:
             ModelPricing pour le modèle.
         """
-        # Simplistic lookup for now
-
-        # Try exact match first
         if model_name in GEMINI_PRICINGS:
             return GEMINI_PRICINGS[model_name].get(service_tier, GEMINI_PRICINGS[model_name]["default"])
 
-        # Try partial match (heuristic)
-        if "pro" in model_name:
-            return GEMINI_PRICINGS["gemini-3-pro-preview"]["default"]
-
-        # Default to Flash
-        return GEMINI_PRICINGS["gemini-3-flash-preview"]["default"]
+        raise ValueError(f"Pricing information not found for model: {model_name}")
 
     def get_price(self, response: Any) -> ResponsePrice:
         """Calculate price for Gemini models and return a ResponsePrice compatible object.
@@ -58,6 +50,8 @@ class GeminiPricingCalculator:
         model = getattr(response, "model", "gemini-3-flash-preview")
 
         pricing = self._get_pricing(model)
+
+        print(f"\nCalculating price for model: {model}, input_tokens: {input_tokens}, output_tokens: {output_tokens}, pricing: {pricing}\n")
 
         input_pricing_per_m = pricing.input
         output_pricing_per_m = pricing.output if pricing.output is not None else 0.0
