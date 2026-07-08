@@ -45,15 +45,15 @@ class ResponsePrice:
     input_cached_price: float = 0.0
     output_price: float = 0.0
     total_price: float = 0.0
-    
+
     input_tokens: int = 0  # Nombre de tokens d'entrée ou secondes pour STT
     input_cached_tokens: int = 0  # Nombre de tokens d'entrée cachés
     output_tokens: int = 0  # Nombre de tokens de sortie
-    
+
     input_pricing: float = 0.0  # Tarif en $/M pour les tokens d'entrée
     input_cached_pricing: float = 0.0  # Tarif en $/M pour les tokens cachés
     output_pricing: float = 0.0  # Tarif en $/M pour les tokens de sortie
-    
+
     currency: str = "dollar"
     currency_symbol: str = "$"
     quantity: int = 1  # Nombre d'appels ou d'unités facturées
@@ -94,7 +94,7 @@ class ResponsePrice:
             input_cached_pricing=model_pricing.input_cached or 0.0,
             output_pricing=model_pricing.output or 0.0,
             currency=model_pricing.currency,
-            currency_symbol=model_pricing.currency_symbol
+            currency_symbol=model_pricing.currency_symbol,
         )
 
     @classmethod
@@ -121,7 +121,7 @@ class ResponsePrice:
             input_cached_pricing=0.0,
             output_pricing=0.0,
             currency=model_pricing.currency,
-            currency_symbol=model_pricing.currency_symbol
+            currency_symbol=model_pricing.currency_symbol,
         )
 
     def __add__(self, other: "ResponsePrice") -> "ResponsePrice":
@@ -161,7 +161,7 @@ class ResponsePrice:
             output_pricing=self.output_pricing,
             currency=self.currency,
             currency_symbol=self.currency_symbol,
-            quantity=new_quantity
+            quantity=new_quantity,
         )
 
     def __iadd__(self, other: "ResponsePrice") -> "ResponsePrice":
