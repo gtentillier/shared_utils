@@ -12,6 +12,12 @@ from openai import OpenAI
 warnings.filterwarnings("ignore", message=r".*FP16 is not supported on CPU; using FP32.*")
 
 
+HALLUCINATED_PHRASES = (
+    "Sous-titrage ST' 501",
+    "Sous-titres réalisés par la communauté d'Amara.org",
+)
+
+
 class OpenAISTTCaller:
     """Handle audio transcription using either local Whisper or OpenAI's Whisper API.
     
@@ -77,6 +83,7 @@ class OpenAISTTCaller:
         response_format: str = "verbose_json",
         timestamp_granularities: list | None = None,
         task: str = "transcribe",
+        verbose: bool = False,
     ) -> dict[str, Any]:
         """Transcribe an audio file.
 
@@ -92,13 +99,14 @@ class OpenAISTTCaller:
             timestamp_granularities: only for "whisper-1", if response_format is set to "verbose_json" : ["word"], ["segment"] or ["word", "segment"]. Defaults to ["segment"].
             task: Transcription task - "transcribe" or "translate". Only used for local Whisper mode.
                   Defaults to "transcribe".
+            verbose: If True, prints segments before and after hallucination cleaning. Defaults to False.
 
         Returns:
             dict[str, Any] containing transcription results. For verbose_json format, includes:
                 - "text": Full transcribed text
                 - "language": Detected language
                 - "duration": Audio duration
-                - "segment": List of segments with timestamps
+                - "segments": List of segments with timestamps
                 - "usage": Seconds usage details
             For other formats, returns the API response as dict.
 
@@ -136,6 +144,8 @@ class OpenAISTTCaller:
         finally:
             end = perf_counter()
             self.last_duration = end - start
+
+        result = self._clean_hallucinations(result, verbose=verbose)
 
         return result
 
@@ -229,3 +239,68 @@ class OpenAISTTCaller:
         result = self.model.transcribe(**transcribe_params)
 
         return result
+
+    @staticmethod
+    def _clean_hallucinations(result: dict[str, Any], verbose: bool = False) -> dict[str, Any]:
+        """Remove known hallucinated phrases from segments and update the transcription result."""
+        if not isinstance(result, dict) or "segments" not in result:
+            return result
+
+        segments = result.get("segments")
+        if not isinstance(segments, list):
+            return result
+
+        if verbose:
+            print(f"\n[STT] Segments avant nettoyage ({len(segments)}):")
+            for i, seg in enumerate(segments):
+                seg_text = seg.get("text", "") if isinstance(seg, dict) else str(seg)
+                print(f"  [{i}] {seg_text!r}")
+
+        cleaned_segments = []
+        for segment in segments:
+            if not isinstance(segment, dict) or "text" not in segment:
+                cleaned_segments.append(segment)
+                continue
+
+            text = segment["text"]
+            stripped_text = text.strip()
+
+            # Check if stripped text ends with any hallucinated phrase (with or without a trailing dot)
+            matched_phrase = None
+            for phrase in HALLUCINATED_PHRASES:
+                if stripped_text.endswith(phrase + "."):
+                    matched_phrase = phrase + "."
+                    break
+                elif stripped_text.endswith(phrase):
+                    matched_phrase = phrase
+                    break
+
+            if matched_phrase:
+                # Remove the matched phrase from the end of stripped text
+                remaining_stripped = stripped_text[: -len(matched_phrase)].rstrip()
+                if not remaining_stripped:
+                    # Segment contained nothing else, discard it
+                    continue
+
+                # Preserve leading whitespace from the original segment text if any
+                leading_ws = text[: len(text) - len(text.lstrip())]
+                segment = dict(segment)
+                segment["text"] = leading_ws + remaining_stripped
+
+            cleaned_segments.append(segment)
+
+        result["segments"] = cleaned_segments
+
+        # If full text is present in result, reconstruct or update it when segments were modified
+        if "text" in result and isinstance(result["text"], str):
+            result["text"] = "".join(seg.get("text", "") for seg in cleaned_segments).strip()
+
+        if verbose:
+            print(f"[STT] Segments après nettoyage ({len(cleaned_segments)}):")
+            for i, seg in enumerate(cleaned_segments):
+                seg_text = seg.get("text", "") if isinstance(seg, dict) else str(seg)
+                print(f"  [{i}] {seg_text!r}")
+            print(f"[STT] Texte final: {result.get('text')!r}\n")
+
+        return result
+
